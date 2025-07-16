@@ -53,12 +53,12 @@ BASE_DIR="$(pwd)"
 if [ "$RECLONE" == "y" ]; then
     echo "📥 Удаляю старую папку и клонирую заново..."
     rm -rf rl-swarm
-    git clone https://github.com/odovich-dev/rl-swarm.git
+    git clone https://github.com/abz-coder/rl-swarm.git
     cd rl-swarm
 else
     if [ ! -d "rl-swarm" ]; then
         echo "📥 Папка не найдена, клонирую..."
-        git clone https://github.com/odovich-dev/rl-swarm.git
+        git clone https://github.com/abz-coder/rl-swarm.git
     fi
     cd rl-swarm
     echo "🔄 Обновляю репозиторий через git pull..."
