@@ -2,6 +2,7 @@
 
 set -e
 
+
 # Установка зависимостей
 sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl screen git gnupg
 
