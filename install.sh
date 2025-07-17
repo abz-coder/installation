@@ -30,14 +30,23 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 source ~/.bashrc 2>/dev/null || true
 
-# Install global npm packages
-sudo npm install -g yarn
-sudo npm install -g n
-sudo n lts
-n 20.18.0
+# Install global npm packages (with error handling)
+echo "📦 Installing global npm packages..."
+sudo npm install -g n || echo "⚠️  Failed to install n, continuing..."
+sudo n lts || echo "⚠️  Failed to install LTS Node.js, continuing..."
+n 20.18.0 || echo "⚠️  Failed to switch to Node.js 20.18.0, continuing..."
+
+# Skip yarn installation if it already exists
+if ! command -v yarn &> /dev/null; then
+    echo "📦 Installing yarn via npm..."
+    sudo npm install -g yarn || echo "⚠️  Failed to install yarn via npm, continuing..."
+else
+    echo "✅ Yarn already installed, skipping npm installation"
+fi
 
 # Clean up old screen sessions and port 3000
-screen -ls | grep "\.gensyn" | cut -d. -f1 | awk '{print $1}' | xargs -r kill
+echo "🧹 Cleaning up old processes..."
+screen -ls | grep "\.gensyn" | cut -d. -f1 | awk '{print $1}' | xargs -r kill 2>/dev/null || true
 lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 
 # ========== Arguments ==========
@@ -48,6 +57,7 @@ REMOVE_TEMP_DATA="${3:-n}"
 
 # Get current directory where script is run from
 BASE_DIR="$(pwd)"
+echo "📁 Base directory: $BASE_DIR"
 
 # Clone or update RL Swarm repo
 if [ "$RECLONE" == "y" ]; then
@@ -64,6 +74,8 @@ else
     echo "🔄 Pulling latest changes from git..."
     git pull
 fi
+
+echo "✅ Repository setup complete"
 
 # ========== Archive Extraction and temp-data cleanup ==========
 ARCHIVE_FOUND=$(find "$BASE_DIR" -maxdepth 1 -type f -name '[0-9]*.tar' | head -n 1)
@@ -87,14 +99,26 @@ else
 fi
 
 # ========== Run rl-swarm in screen ==========
+echo "🚀 Starting rl-swarm in screen session..."
 screen -L -Logfile "$BASE_DIR/gensyn.log" -dmS gensyn bash -c "
     cd '$BASE_DIR/rl-swarm'
-    if [ ! -d '.venv' ]; then python3 -m venv .venv; fi
+    echo 'Setting up Python virtual environment...'
+    if [ ! -d '.venv' ]; then 
+        python3 -m venv .venv
+        echo 'Virtual environment created'
+    fi
     source .venv/bin/activate
+    echo 'Installing Python dependencies...'
     pip install --upgrade pip
     pip install accelerate==1.7
+    echo 'Starting rl-swarm...'
     trap '' SIGINT
     USE_CPU='$USE_CPU_FLAG' ./run_rl_swarm.sh
     exec bash -i
 " &
 disown
+
+echo "✅ Screen session 'gensyn' created successfully!"
+echo "📋 To check the session: screen -ls"
+echo "📋 To attach to the session: screen -r gensyn"
+echo "📋 To view logs: tail -f $BASE_DIR/gensyn.log" 
