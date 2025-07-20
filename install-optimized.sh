@@ -51,8 +51,7 @@ lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 
 # ========== Arguments ==========
 RECLONE="${1:-n}"
-USE_CPU_FLAG="${2:-}"
-REMOVE_TEMP_DATA="${3:-n}"
+USE_VLLM_FLAG="${2:-y}"
 # ===============================
 
 # Get current directory where script is run from
@@ -77,23 +76,12 @@ fi
 
 echo "✅ Repository setup complete"
 
-# ========== Archive Extraction and temp-data cleanup ==========
+# ========== Archive Extraction ==========
 ARCHIVE_FOUND=$(find "$BASE_DIR" -maxdepth 1 -type f -name '[0-9]*.tar' | head -n 1)
 if [ -n "$ARCHIVE_FOUND" ]; then
     echo "📦 Found archive $ARCHIVE_FOUND. Extracting..."
     tar -xvf "$ARCHIVE_FOUND" -C "$BASE_DIR"
     echo "✅ Archive extracted successfully."
-
-    if [ "$REMOVE_TEMP_DATA" == "y" ]; then
-        TEMP_DATA_DIR="$BASE_DIR/rl-swarm/modal-login/temp-data"
-        if [ -d "$TEMP_DATA_DIR" ]; then
-            echo "🗑  Cleaning up files in $TEMP_DATA_DIR..."
-            rm -rf "$TEMP_DATA_DIR"/*
-            echo "✅ temp-data cleaned successfully."
-        else
-            echo "ℹ️  temp-data directory not found."
-        fi
-    fi
 else
     echo "ℹ️  No archive found in $BASE_DIR."
 fi
@@ -113,7 +101,7 @@ screen -L -Logfile "$BASE_DIR/gensyn.log" -dmS gensyn bash -c "
     pip install accelerate==1.7
     echo 'Starting rl-swarm...'
     trap '' SIGINT
-    USE_CPU='$USE_CPU_FLAG' ./run_rl_swarm.sh
+    USE_VLLM='$USE_VLLM_FLAG' ./run_rl_swarm.sh
     exec bash -i
 " &
 disown
