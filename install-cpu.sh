@@ -2,46 +2,53 @@
 
 set -e
 
-# Install base dependencies
-sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl screen git gnupg
-
-# Install Yarn
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/yarn.gpg >/dev/null
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt update && sudo apt install -y yarn
-
-# Install Node.js via custom script
-curl -sSL https://raw.githubusercontent.com/zunxbt/installation/main/node.sh | bash
-
-# Install required system packages
-sudo apt-get update
-sudo apt-get install -y build-essential software-properties-common
-
-# Install Python 3.12 (fallback to 3.10-dev if needed)
-if sudo add-apt-repository -y ppa:deadsnakes/ppa && \
-   sudo apt-get update && \
-   sudo apt-get install -y python3.12 python3.12-dev; then
-    echo "✅ Python 3.12 and python3.12-dev installed"
+# Check if we should skip system installation
+if [[ "$SKIP_SYSTEM_INSTALL" =~ ^(y|Y|yes|YES)$ ]]; then
+    echo "📋 SKIP_SYSTEM_INSTALL=$SKIP_SYSTEM_INSTALL detected. Skipping system dependency installation..."
 else
-    echo "⚠️  Python 3.12 not available, installing python3.10-dev instead..."
-    sudo apt-get install -y python3.10-dev
-fi
+    echo "📋 Installing system dependencies..."
+    
+    # Install base dependencies
+    sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl screen git gnupg
 
-export PATH="$HOME/.local/bin:$PATH"
-source ~/.bashrc 2>/dev/null || true
+    # Install Yarn
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/yarn.gpg >/dev/null
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+    sudo apt update && sudo apt install -y yarn
 
-# Install global npm packages (with error handling)
-echo "📦 Installing global npm packages..."
-sudo npm install -g n || echo "⚠️  Failed to install n, continuing..."
-sudo n lts || echo "⚠️  Failed to install LTS Node.js, continuing..."
-n 20.18.0 || echo "⚠️  Failed to switch to Node.js 20.18.0, continuing..."
+    # Install Node.js via custom script
+    curl -sSL https://raw.githubusercontent.com/zunxbt/installation/main/node.sh | bash
 
-# Skip yarn installation if it already exists
-if ! command -v yarn &> /dev/null; then
-    echo "📦 Installing yarn via npm..."
-    sudo npm install -g yarn || echo "⚠️  Failed to install yarn via npm, continuing..."
-else
-    echo "✅ Yarn already installed, skipping npm installation"
+    # Install required system packages
+    sudo apt-get update
+    sudo apt-get install -y build-essential software-properties-common
+
+    # Install Python 3.12 (fallback to 3.10-dev if needed)
+    if sudo add-apt-repository -y ppa:deadsnakes/ppa && \
+       sudo apt-get update && \
+       sudo apt-get install -y python3.12 python3.12-dev; then
+        echo "✅ Python 3.12 and python3.12-dev installed"
+    else
+        echo "⚠️  Python 3.12 not available, installing python3.10-dev instead..."
+        sudo apt-get install -y python3.10-dev
+    fi
+
+    export PATH="$HOME/.local/bin:$PATH"
+    source ~/.bashrc 2>/dev/null || true
+
+    # Install global npm packages (with error handling)
+    echo "📦 Installing global npm packages..."
+    sudo npm install -g n || echo "⚠️  Failed to install n, continuing..."
+    sudo n lts || echo "⚠️  Failed to install LTS Node.js, continuing..."
+    n 20.18.0 || echo "⚠️  Failed to switch to Node.js 20.18.0, continuing..."
+
+    # Skip yarn installation if it already exists
+    if ! command -v yarn &> /dev/null; then
+        echo "📦 Installing yarn via npm..."
+        sudo npm install -g yarn || echo "⚠️  Failed to install yarn via npm, continuing..."
+    else
+        echo "✅ Yarn already installed, skipping npm installation"
+    fi
 fi
 
 # Clean up old screen sessions and port 3000
@@ -52,6 +59,7 @@ lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 # ========== Arguments ==========
 RECLONE="${1:-n}"
 REMOVE_TEMP_DATA="${2:-n}"
+SKIP_SYSTEM_INSTALL="${3:-n}"  # New parameter: default to 'n' (install system deps), 'y' to skip
 # ===============================
 
 # Get current directory where script is run from
@@ -75,6 +83,13 @@ else
 fi
 
 echo "✅ Repository setup complete"
+
+# ========== Clean up existing data ==========
+echo "🧹 Cleaning up existing data files..."
+[ -d "$BASE_DIR/rl-swarm/modal-login/temp-data" ] && rm -rf "$BASE_DIR/rl-swarm/modal-login/temp-data"/*
+[ -f "$BASE_DIR/rl-swarm/swarm.pem" ] && rm -f "$BASE_DIR/rl-swarm/swarm.pem"
+[ -d "$BASE_DIR/rl-swarm/logs" ] && rm -rf "$BASE_DIR/rl-swarm/logs"
+echo "✅ Data cleanup complete"
 
 # ========== Archive Extraction and temp-data cleanup ==========
 ARCHIVE_FOUND=$(find "$BASE_DIR" -maxdepth 1 -type f -name '[0-9]*.tar' | head -n 1)
