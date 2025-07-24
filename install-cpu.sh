@@ -12,7 +12,7 @@ SKIP_SYSTEM_INSTALL="${3:-n}"  # New parameter: default to 'n' (install system d
 if [[ "$SKIP_SYSTEM_INSTALL" =~ ^(y|Y|yes|YES)$ ]]; then
     echo "📋 SKIP_SYSTEM_INSTALL=$SKIP_SYSTEM_INSTALL detected. Skipping system dependency installation..."
 else
-    echo "📋 Installing system dependencies..."
+    echo "📋 Installing system dependencies.."
     
     # Install base dependencies
     sudo apt update && sudo apt install -y python3 python3-venv python3-pip curl screen git gnupg
