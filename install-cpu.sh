@@ -2,6 +2,12 @@
 
 set -e
 
+# ========== Arguments ==========
+RECLONE="${1:-n}"
+REMOVE_TEMP_DATA="${2:-n}"
+SKIP_SYSTEM_INSTALL="${3:-n}"  # New parameter: default to 'n' (install system deps), 'y' to skip
+# ===============================
+
 # Check if we should skip system installation
 if [[ "$SKIP_SYSTEM_INSTALL" =~ ^(y|Y|yes|YES)$ ]]; then
     echo "📋 SKIP_SYSTEM_INSTALL=$SKIP_SYSTEM_INSTALL detected. Skipping system dependency installation..."
@@ -56,12 +62,6 @@ echo "🧹 Cleaning up old processes..."
 screen -ls | grep "\.gensyn" | cut -d. -f1 | awk '{print $1}' | xargs -r kill 2>/dev/null || true
 lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 
-# ========== Arguments ==========
-RECLONE="${1:-n}"
-REMOVE_TEMP_DATA="${2:-n}"
-SKIP_SYSTEM_INSTALL="${3:-n}"  # New parameter: default to 'n' (install system deps), 'y' to skip
-# ===============================
-
 # Get current directory where script is run from
 BASE_DIR="$(pwd)"
 echo "📁 Base directory: $BASE_DIR"
@@ -114,6 +114,7 @@ fi
 
 # ========== Run rl-swarm in screen ==========
 echo "🚀 Starting rl-swarm in screen session..."
+echo "📋 SKIP_SYSTEM_INSTALL parameter: $SKIP_SYSTEM_INSTALL"
 screen -L -Logfile "$BASE_DIR/gensyn.log" -dmS gensyn bash -c "
     cd '$BASE_DIR/rl-swarm'
     echo 'Setting up Python virtual environment...'
