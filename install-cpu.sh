@@ -6,6 +6,7 @@ set -e
 RECLONE="${1:-n}"
 REMOVE_TEMP_DATA="${2:-n}"
 SKIP_SYSTEM_INSTALL="${3:-n}"  # New parameter: default to 'n' (install system deps), 'y' to skip
+USE_TIMEOUT="${4:-y}"  # New parameter: default to 'y' (use random timeout), 'n' to skip timeout
 # ===============================
 
 # Check if we should skip system installation
@@ -112,9 +113,33 @@ else
     echo "ℹ️  No archive found in $BASE_DIR."
 fi
 
+# ========== Random timeout before starting ==========
+if [[ "$USE_TIMEOUT" =~ ^(y|Y|yes|YES)$ ]]; then
+    # Generate random timeout between 10 minutes (600s) and 3 hours (10800s)
+    MIN_TIMEOUT=600     # 10 minutes in seconds
+    MAX_TIMEOUT=10800   # 3 hours in seconds
+    TIMEOUT_RANGE=$((MAX_TIMEOUT - MIN_TIMEOUT + 1))
+    RANDOM_TIMEOUT=$((MIN_TIMEOUT + (RANDOM % TIMEOUT_RANGE)))
+    
+    # Convert seconds to human readable format
+    HOURS=$((RANDOM_TIMEOUT / 3600))
+    MINUTES=$(((RANDOM_TIMEOUT % 3600) / 60))
+    SECONDS=$((RANDOM_TIMEOUT % 60))
+    
+    echo "⏰ USE_TIMEOUT=$USE_TIMEOUT detected. Random timeout generated: ${RANDOM_TIMEOUT}s"
+    echo "⏰ Waiting for ${HOURS}h ${MINUTES}m ${SECONDS}s before starting rl-swarm..."
+    echo "💡 This helps distribute network load across different start times"
+    
+    sleep $RANDOM_TIMEOUT
+    echo "✅ Timeout completed. Proceeding with rl-swarm startup..."
+else
+    echo "⏰ USE_TIMEOUT=$USE_TIMEOUT detected. Skipping random timeout..."
+fi
+
 # ========== Run rl-swarm in screen ==========
 echo "🚀 Starting rl-swarm in screen session..."
 echo "📋 SKIP_SYSTEM_INSTALL parameter: $SKIP_SYSTEM_INSTALL"
+echo "📋 USE_TIMEOUT parameter: $USE_TIMEOUT"
 screen -L -Logfile "$BASE_DIR/gensyn.log" -dmS gensyn bash -c "
     cd '$BASE_DIR/rl-swarm'
     echo 'Setting up Python virtual environment...'
@@ -136,4 +161,4 @@ disown
 echo "✅ Screen session 'gensyn' created successfully!"
 echo "📋 To check the session: screen -ls"
 echo "📋 To attach to the session: screen -r gensyn"
-echo "📋 To view logs: tail -f $BASE_DIR/gensyn.log"
+echo "📋 To view logs: tail -f $BASE_DIR/gensyn.log" 
