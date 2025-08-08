@@ -156,7 +156,7 @@ screen -L -Logfile "$BASE_DIR/gensyn.log" -dmS gensyn bash -c "
     pip install accelerate==1.7
     echo 'Starting rl-swarm...'
     trap '' SIGINT
-    ./auto_restart.sh
+    ./run_rl_swarm.sh
     exec bash -i
 " &
 disown
