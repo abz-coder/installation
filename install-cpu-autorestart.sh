@@ -71,12 +71,12 @@ echo "📁 Base directory: $BASE_DIR"
 if [ "$RECLONE" == "y" ]; then
     echo "📥 Removing old rl-swarm and cloning fresh copy..."
     rm -rf rl-swarm
-    git clone https://github.com/abz-coder/rl-swarm-cpu-autorestart.git rl-swarm
+    git clone https://github.com/abz-coder/rl-swarm.git rl-swarm
     cd rl-swarm
 else
     if [ ! -d "rl-swarm" ]; then
         echo "📥 rl-swarm directory not found. Cloning..."
-        git clone https://github.com/abz-coder/rl-swarm-cpu-autorestart.git rl-swarm
+        git clone https://github.com/abz-coder/rl-swarm.git rl-swarm
     fi
     cd rl-swarm
     echo "🔄 Pulling latest changes from git..."
